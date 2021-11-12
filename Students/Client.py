@@ -34,6 +34,12 @@ class Client:
 		self.teardownAcked = 0
 		self.connectToServer()
 		self.frameNbr = 0
+		self.expFrameNbr = 0
+		self.statPacketsLost = 0
+		self.statTotalBytes = 0
+		self.statTotalPlayTime = 0
+		self.startTime = 0
+		self.totalFrames = 0
 		
 	# THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI 	
 	def createWidgets(self):
@@ -74,8 +80,7 @@ class Client:
 	
 	def exitClient(self):
 		"""Teardown button handler."""
-		self.sendRtspRequest(self.TEARDOWN) #Lo ben server
-		
+		self.sendRtspRequest(self.TEARDOWN) #Lo ben server	
 		#Xu ly ben client
 		self.master.destroy() # Dong GUI
 		os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT) # Xoa cache
@@ -107,19 +112,9 @@ class Client:
 				if data: #Neu thanh cong thi decode du lieu va xu ly
 					rtpPacket = RtpPacket()
 					rtpPacket.decode(data)
-					#print ("Current Seq Num: #" + str(rtpPacket.seqNum()))
 
-					try:
-						if self.frameNbr + 1 != rtpPacket.seqNum():
-							self.counter += 1
-							print ('!'*60 + "\nPACKET LOSS\n" + '!'*60)
-						currFrameNbr = rtpPacket.seqNum()
-						#version = rtpPacket.version()
-					except:
-						print ("seqNum() error")
-						print ('-'*60)
-						traceback.print_exc(file=sys.stdout)
-						print ('-'*60)
+					print("Current Seq Num: " + str(currFrameNbr))
+					currFrameNbr = rtpPacket.seqNum()					
 
 					if currFrameNbr > self.frameNbr: # Discard the late packet
 						self.frameNbr = currFrameNbr
@@ -127,7 +122,6 @@ class Client:
 
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
-				print ("Didn`t receive data!")
 				if self.playEvent.isSet():
 					break
 
@@ -141,32 +135,19 @@ class Client:
 		"""Write the received frame to a temp image file. Return the image file."""
 		cachename = CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT
 
-		try:
-			file = open(cachename, "wb")
-		except:
-			print ("file open error")
-
-		try:
-			file.write(data)
-		except:
-			print ("file write error")
-
+		file = open(cachename, "wb")
+		file.write(data)
 		file.close()
+
 		return cachename
 	#TODO
 	
 	def updateMovie(self, imageFile):
 		"""Update the image file as video frame in the GUI."""
-		try:
-			photo = ImageTk.PhotoImage(Image.open(imageFile))
-		except:
-			print ("photo error")
-			print ('-'*60)
-			traceback.print_exc(file=sys.stdout)
-			print ('-'*60)
-
-		self.label.configure(image = photo, height=288)
+		photo = ImageTk.PhotoImage(Image.open(imageFile))
+		self.label.configure(image = photo, height=288) 
 		self.label.image = photo
+
 	#TODO
 		
 	def connectToServer(self):
@@ -186,65 +167,35 @@ class Client:
 		if requestCode == self.SETUP and self.state == self.INIT:
 			threading.Thread(target=self.recvRtspReply).start()
 			# Update RTSP sequence number.
-			# ...
-			self.rtspSeq = 1
+			self.rtspSeq += 1
 
 			# Write the RTSP request to be sent.
-			# request = ...
 			request = 'SETUP ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nTransport: RTP/UDP; client_port= ' + str(self.rtpPort)
 
-			
-			self.rtspSocket.send(request.encode())
-			#self.rtspSocket.send(request)
 			# Keep track of the sent request.
 			self.requestSent = self.SETUP
 
 		# Play request
 		elif requestCode == self.PLAY and self.state == self.READY:
-			# Update RTSP sequence number.
-			# ...
-			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
+			self.rtspSeq += 1
 			request = 'PLAY ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
-
-			self.rtspSocket.send(request.encode())
-
 			self.requestSent = self.PLAY
 
 		# Pause request
 		elif requestCode == self.PAUSE and self.state == self.PLAYING:
-			# Update RTSP sequence number.
-			# ...
-			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
+			self.rtspSeq += 1
 			request = 'PAUSE ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
-			self.rtspSocket.send(request.encode())
-
-			# Keep track of the sent request.
-			# self.requestSent = ...
 			self.requestSent = self.PAUSE
-
-		# Resume request
-
 
 		# Teardown request
 		elif requestCode == self.TEARDOWN and not self.state == self.INIT:
-			# Update RTSP sequence number.
-			# ...
-			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
+			self.rtspSeq += 1
 			request = 'TEARDOWN ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
-			self.rtspSocket.send(request.encode())
-
-			# Keep track of the sent request.
-			# self.requestSent = ...
 			self.requestSent = self.TEARDOWN
-
 		else:
 			return
+
+		self.rtspSocket.send(request.encode('utf-8'))
 		print("Data sent:\n" + request)
 		
 	
