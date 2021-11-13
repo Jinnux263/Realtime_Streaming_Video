@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
 import socket, threading, sys, traceback, os
+import time
 
 from RtpPacket import RtpPacket
 
@@ -38,12 +39,6 @@ class Client:
 	# THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI 	
 	def createWidgets(self):
 		"""Build GUI."""
-		# Create Setup button
-		self.setup = Button(self.master, width=20, padx=3, pady=3)
-		self.setup["text"] = "Setup"
-		self.setup["command"] = self.setupMovie
-		self.setup.grid(row=1, column=0, padx=2, pady=2)
-		
 		# Create Play button		
 		self.start = Button(self.master, width=20, padx=3, pady=3)
 		self.start["text"] = "Play"
@@ -89,9 +84,12 @@ class Client:
 	
 	def playMovie(self):
 		"""Play button handler."""
-		if self.state == self.READY:
-			# Tao ot thread moi de nhan packet
+		if self.state == self.INIT:
+			self.sendRtspRequest(self.SETUP)
+			time.sleep(0.05)
 
+		if self.state == self.READY:
+			# Tao mot thread moi de nhan packet
 			threading.Thread(target=self.listenRtp).start()
 			self.playEvent = threading.Event()
 			self.playEvent.clear()
