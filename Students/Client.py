@@ -12,13 +12,14 @@ class Client:
 	INIT = 0
 	READY = 1
 	PLAYING = 2
-	SWITCH = 3
+	SWITCHING = 3
 	state = INIT
 	
 	SETUP = 0
 	PLAY = 1
 	PAUSE = 2
 	TEARDOWN = 3
+	SWITCH = 4
 	
 	# Initiation..
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
@@ -62,10 +63,22 @@ class Client:
 		self.teardown["text"] = "Teardown"
 		self.teardown["command"] =  self.exitClient
 		self.teardown.grid(row=1, column=3, padx=2, pady=2)
+
+		# Create Switch button
+		self.switch = Button(self.master, width=20, padx=3, pady=3)
+		self.switch["text"] = "Switch"
+		self.switch["command"] =  self.switchMovie
+		self.switch.grid(row=1, column=4, padx=2, pady=2)
 		
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
+
+	def switchMovie(self):
+		#self.sendRtspRequest(self.PAUSE)
+		self.sendRtspRequest(self.SWITCH)
+		#print("switch")
+
 	
 	def setupMovie(self):
 		"""Setup button handler."""
@@ -243,7 +256,7 @@ class Client:
 			# self.requestSent = ...
 			self.requestSent = self.TEARDOWN
 
-		# Teardown request
+		# Switch request
 		elif requestCode == self.SWITCH:
 			self.rtspSeq = self.rtspSeq + 1
 			request = 'SWITCH ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
@@ -275,6 +288,11 @@ class Client:
 		"""Parse the RTSP reply from the server."""
 
 		lines = data.split('\n')
+		if self.requestSent == self.SWITCH:
+			print(data)
+			return
+
+
 		seqNum = int(lines[1].split(' ')[1])
 
 		# Process only if the server reply's sequence number is the same as the request's

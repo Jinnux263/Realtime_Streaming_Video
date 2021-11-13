@@ -9,11 +9,12 @@ class ServerWorker:
 	PLAY = 'PLAY'
 	PAUSE = 'PAUSE'
 	TEARDOWN = 'TEARDOWN'
+	SWITCH = 'SWITCH'
 	
 	INIT = 0
 	READY = 1
 	PLAYING = 2
-	SWITCH = 3
+	SWITCHING = 3
 	state = INIT
 
 	OK_200 = 0
@@ -108,6 +109,12 @@ class ServerWorker:
 			# Close the RTP socket
 			self.clientInfo['rtpSocket'].close()
 
+		# Process SWITCH request
+		elif requestType == self.SWITCH:
+			print("processing SWITCH\n")			
+			self.sendSwitchOption()
+
+
 			
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""
@@ -161,3 +168,12 @@ class ServerWorker:
 			print("404 NOT FOUND")
 		elif code == self.CON_ERR_500:
 			print("500 CONNECTION ERROR")
+
+	def sendSwitchOption(self):
+
+		reply = "Option:\n"
+		reply += "movie.Mjpeg\n"
+		reply += "random.Mjpeg\n"
+
+		connSocket = self.clientInfo['rtspSocket'][0]
+		connSocket.send(reply.encode())
