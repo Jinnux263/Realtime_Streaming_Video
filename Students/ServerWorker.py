@@ -174,11 +174,11 @@ class ServerWorker:
 			print("500 CONNECTION ERROR")
 
 	def sendDescription(self):
+		
+		description = '\nSession Description: \n\n'
+		description += 'Video file name: ' + self.clientInfo['videoStream'].filename + '\n'
+		description += 'RTP Port: ' + str(self.clientInfo['rtpPort']) + '\n'
+		description += 'Stream ID: ' + str(self.clientInfo['session']) + '\n'
 
-			description = '\nSession Description: \n\n'
-			description += 'Video file name: ' + self.clientInfo['videoStream'].filename + '\n'
-			description += 'RTP Port: ' + str(self.clientInfo['rtpPort']) + '\n'
-			description += 'Stream ID: ' + str(self.clientInfo['session']) + '\n'
-
-			connSocket = self.clientInfo['rtspSocket'][0]
-			connSocket.send(description.encode())
+		connSocket = self.clientInfo['rtspSocket'][0]
+		connSocket.send(description.encode())

@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
 import socket, threading, sys, traceback, os
+import time
 
 from RtpPacket import RtpPacket
 
@@ -64,7 +65,7 @@ class Client:
 		self.teardown.grid(row=1, column=3, padx=2, pady=2)
 
 		# Create Describe button
-		self.describe = Button(self.master, width=16, padx=3, pady=3)
+		self.describe = Button(self.master, width=20, padx=3, pady=3)
 		self.describe["text"] = "Describe"
 		self.describe["command"] =  self.describeSession
 		self.describe.grid(row=1, column=4, padx=2, pady=2)
@@ -75,6 +76,10 @@ class Client:
 
 	def describeSession(self):
 		"""Describe button handler."""
+		if self.state == self.INIT:
+			self.sendRtspRequest(self.SETUP)
+			time.sleep(0.05)
+
 		self.sendRtspRequest(self.DESCRIBE)
 	
 	def setupMovie(self):
