@@ -131,7 +131,7 @@ class Client:
 				if data: #Neu thanh cong thi decode du lieu va xu ly
 					rtpPacket = RtpPacket()
 					rtpPacket.decode(data)
-					#print ("Current Seq Num: #" + str(rtpPacket.seqNum()))
+					print ("Current Seq Num: #" + str(rtpPacket.seqNum()))
 
 					try:
 						if self.frameNbr + 1 != rtpPacket.seqNum():
@@ -272,8 +272,7 @@ class Client:
 			return
 		print("Data sent:\n" + request)
 		
-	
-	
+
 	def recvRtspReply(self):
 		"""Receive RTSP reply from the server."""
 		while True:
