@@ -18,7 +18,8 @@ class Client:
 	PLAY = 1
 	PAUSE = 2
 	TEARDOWN = 3
-	
+	DESCRIBE = 4
+
 	# Initiation..
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
 		self.master = master
@@ -61,10 +62,20 @@ class Client:
 		self.teardown["text"] = "Teardown"
 		self.teardown["command"] =  self.exitClient
 		self.teardown.grid(row=1, column=3, padx=2, pady=2)
+
+		# Create Describe button
+		self.describe = Button(self.master, width=16, padx=3, pady=3)
+		self.describe["text"] = "Describe"
+		self.describe["command"] =  self.describeSession
+		self.describe.grid(row=1, column=4, padx=2, pady=2)
 		
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
+
+	def describeSession(self):
+		"""Describe button handler."""
+		self.sendRtspRequest(self.DESCRIBE)
 	
 	def setupMovie(self):
 		"""Setup button handler."""
@@ -184,66 +195,39 @@ class Client:
 		#-------------
 		if requestCode == self.SETUP and self.state == self.INIT:
 			threading.Thread(target=self.recvRtspReply).start()
-			# Update RTSP sequence number.
-			# ...
 			self.rtspSeq = 1
-
-			# Write the RTSP request to be sent.
-			# request = ...
 			request = 'SETUP ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nTransport: RTP/UDP; client_port= ' + str(self.rtpPort)
-
-			
-			self.rtspSocket.send(request.encode())
-			#self.rtspSocket.send(request)
-			# Keep track of the sent request.
 			self.requestSent = self.SETUP
 
 		# Play request
 		elif requestCode == self.PLAY and self.state == self.READY:
-			# Update RTSP sequence number.
-			# ...
 			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
 			request = 'PLAY ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
-
-			self.rtspSocket.send(request.encode())
-
 			self.requestSent = self.PLAY
 
 		# Pause request
 		elif requestCode == self.PAUSE and self.state == self.PLAYING:
-			# Update RTSP sequence number.
-			# ...
 			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
 			request = 'PAUSE ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
-			self.rtspSocket.send(request.encode())
-
-			# Keep track of the sent request.
-			# self.requestSent = ...
 			self.requestSent = self.PAUSE
-
-		# Resume request
 
 
 		# Teardown request
 		elif requestCode == self.TEARDOWN and not self.state == self.INIT:
-			# Update RTSP sequence number.
-			# ...
 			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
 			request = 'TEARDOWN ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
-			self.rtspSocket.send(request.encode())
-
-			# Keep track of the sent request.
-			# self.requestSent = ...
 			self.requestSent = self.TEARDOWN
+
+		# Describe request	
+		elif requestCode == self.DESCRIBE:
+			self.rtspSeq += 1
+			request = 'DESCRIBE ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
+			self.requestSent = self.DESCRIBE
 
 		else:
 			return
+
+		self.rtspSocket.send(request.encode())
 		print("Data sent:\n" + request)
 		
 	
@@ -267,6 +251,13 @@ class Client:
 		"""Parse the RTSP reply from the server."""
 
 		lines = data.split('\n')
+
+		if 'Description' in lines[1]:
+			for line in lines:
+				print(line)
+
+			return
+
 		seqNum = int(lines[1].split(' ')[1])
 
 		# Process only if the server reply's sequence number is the same as the request's
