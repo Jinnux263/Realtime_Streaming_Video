@@ -18,6 +18,7 @@ class Client:
 	PLAY = 1
 	PAUSE = 2
 	TEARDOWN = 3
+	SETSPEED = 4
 	
 	# Initiation..
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
@@ -34,6 +35,7 @@ class Client:
 		self.teardownAcked = 0
 		self.connectToServer()
 		self.frameNbr = 0
+		self.speed = 1
 		
 	# THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI 	
 	def createWidgets(self):
@@ -61,11 +63,31 @@ class Client:
 		self.teardown["text"] = "Teardown"
 		self.teardown["command"] =  self.exitClient
 		self.teardown.grid(row=1, column=3, padx=2, pady=2)
+
+		# Create Speeddown button
+		self.speeddown = Button(self.master, width=20, padx=3, pady=3)
+		self.speeddown["text"] = "SpeedDown"
+		self.speeddown["command"] =  self.setSpeedDown
+		self.speeddown.grid(row=1, column=4, padx=2, pady=2)
+
+		# Create Speedup button
+		self.speedup = Button(self.master, width=20, padx=3, pady=3)
+		self.speedup["text"] = "SpeedUp"
+		self.speedup["command"] =  self.setSpeedUp
+		self.speedup.grid(row=1, column=5, padx=2, pady=2)
 		
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
 	
+	def setSpeedDown(self):
+		self.speed /= 2
+		self.sendRtspRequest(self.SETSPEED)
+
+	def setSpeedUp(self):
+		self.speed *= 2
+		self.sendRtspRequest(self.SETSPEED)
+
 	def setupMovie(self):
 		"""Setup button handler."""
 		if self.state == self.INIT:
@@ -230,17 +252,19 @@ class Client:
 
 		# Teardown request
 		elif requestCode == self.TEARDOWN and not self.state == self.INIT:
-			# Update RTSP sequence number.
-			# ...
 			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
 			request = 'TEARDOWN ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
 			self.rtspSocket.send(request.encode())
-
-			# Keep track of the sent request.
-			# self.requestSent = ...
 			self.requestSent = self.TEARDOWN
+
+		# Setspeed request
+		elif requestCode == self.SETSPEED:
+
+			self.rtspSeq = self.rtspSeq + 1
+			request = 'SETSPEED ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId) + "\n" + str(self.speed)
+			self.rtspSocket.send(request.encode())
+			self.requestSent = self.SETSPEED
+
 
 		else:
 			return
