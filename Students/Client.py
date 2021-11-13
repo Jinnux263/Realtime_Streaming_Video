@@ -12,6 +12,7 @@ class Client:
 	INIT = 0
 	READY = 1
 	PLAYING = 2
+	SWITCH = 3
 	state = INIT
 	
 	SETUP = 0
@@ -241,6 +242,13 @@ class Client:
 			# Keep track of the sent request.
 			# self.requestSent = ...
 			self.requestSent = self.TEARDOWN
+
+		# Teardown request
+		elif requestCode == self.SWITCH:
+			self.rtspSeq = self.rtspSeq + 1
+			request = 'SWITCH ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
+			self.rtspSocket.send(request.encode())
+			self.requestSent = self.SWITCH
 
 		else:
 			return

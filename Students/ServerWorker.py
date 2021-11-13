@@ -13,6 +13,7 @@ class ServerWorker:
 	INIT = 0
 	READY = 1
 	PLAYING = 2
+	SWITCH = 3
 	state = INIT
 
 	OK_200 = 0
@@ -106,6 +107,7 @@ class ServerWorker:
 			
 			# Close the RTP socket
 			self.clientInfo['rtpSocket'].close()
+
 			
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""
@@ -125,9 +127,9 @@ class ServerWorker:
 					self.clientInfo['rtpSocket'].sendto(self.makeRtp(data, frameNumber),(address,port))
 				except:
 					print("Connection Error")
-					#print('-'*60)
-					#traceback.print_exc(file=sys.stdout)
-					#print('-'*60)
+					print('-'*60)
+					traceback.print_exc(file=sys.stdout)
+					print('-'*60)
 
 	def makeRtp(self, payload, frameNbr):
 		"""RTP-packetize the video data."""
