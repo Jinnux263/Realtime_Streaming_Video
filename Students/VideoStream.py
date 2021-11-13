@@ -8,19 +8,22 @@ class VideoStream:
 		self.frameNum = 0
 		self.totalFrame = 0
 
-	def totalFrame(self):
-		data = self.file.read(5) # Get the framelength from the first 5 bits
+	def gettotalFrame(self):
+		file = self.file
+		data = file.read(5) # Get the framelength from the first 5 bits
 		if data: 
 			framelength = int(data)
-			self.file.read(framelength)
+			file.read(framelength)
 			self.totalFrame += 1
 
 		while data:
-			data = self.file.read(5)
-			framelength = int(data)
-			data = self.file.read(framelength)
-			self.totalFrame += 1
+			data = file.read(5)
+			if data:
+				framelength = int(data)
+				data = file.read(framelength)
+				self.totalFrame += 1
 		
+		self.file = open(self.filename, 'rb')
 		return self.totalFrame
 		
 	def nextFrame(self):

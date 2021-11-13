@@ -59,6 +59,8 @@ class ServerWorker:
 				
 				try:
 					self.clientInfo['videoStream'] = VideoStream(filename)
+					self.totalFrame = self.clientInfo['videoStream'].gettotalFrame()
+					#print(totalFrame)
 					self.state = self.READY
 				except IOError:
 					self.replyRtsp(self.FILE_NOT_FOUND_404, seq[1])
@@ -111,16 +113,16 @@ class ServerWorker:
 
 		# Process SETSPEED request
 		elif requestType == self.SETSPEED:
-			print("processing SETSPEED\n")		
+			print("processing SETSPEED\n")	
 			self.replyRtsp(self.OK_200, seq[1])
-			self.speed /= float(request[3])
-			#print(self.speed)
+			self.speed = float(request[3])
+			#print("speed:" + str(self.speed))
 
 			
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""
 		while True:
-			self.clientInfo['event'].wait(0.05 * self.speed) 
+			self.clientInfo['event'].wait(0.05 / self.speed) 
 			
 			# Stop sending if request is PAUSE or TEARDOWN
 			if self.clientInfo['event'].isSet(): 

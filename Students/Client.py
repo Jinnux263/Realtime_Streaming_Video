@@ -81,12 +81,14 @@ class Client:
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
 	
 	def setSpeedDown(self):
-		self.speed /= 2
-		self.sendRtspRequest(self.SETSPEED)
+		if self.speed > 0.25:
+			self.speed /= 2
+			self.sendRtspRequest(self.SETSPEED)
 
 	def setSpeedUp(self):
-		self.speed *= 2
-		self.sendRtspRequest(self.SETSPEED)
+		if self.speed < 4:
+			self.speed *= 2
+			self.sendRtspRequest(self.SETSPEED)
 
 	def setupMovie(self):
 		"""Setup button handler."""
