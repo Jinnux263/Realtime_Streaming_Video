@@ -127,7 +127,6 @@ class Client:
 
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
-				print ("Didn`t receive data!")
 				if self.playEvent.isSet():
 					break
 
