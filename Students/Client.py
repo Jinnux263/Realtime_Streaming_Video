@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
 import socket, threading, sys, traceback, os
+import time
 
 from RtpPacket import RtpPacket
 
@@ -71,6 +72,13 @@ class Client:
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
+
+		#Create labels to display statistics about the session
+		self.displays = []
+		for i in range(6):
+			DLabel = Label(self.master, height=1)
+			DLabel.grid(row=2 + i, column=0, columnspan=4, sticky=W, padx=5, pady=5) 
+			self.displays.append(DLabel)
 	
 	def setupMovie(self):
 		"""Setup button handler."""
@@ -95,8 +103,8 @@ class Client:
 	def playMovie(self):
 		"""Play button handler."""
 		if self.state == self.READY:
-			# Tao ot thread moi de nhan packet
-
+			# Tao mot thread moi de nhan packet
+			self.startTime = time.time()
 			threading.Thread(target=self.listenRtp).start()
 			self.playEvent = threading.Event()
 			self.playEvent.clear()
@@ -113,12 +121,36 @@ class Client:
 					rtpPacket = RtpPacket()
 					rtpPacket.decode(data)
 
-					print("Current Seq Num: " + str(currFrameNbr))
+					self.expFrameNbr += 1
 					currFrameNbr = rtpPacket.seqNum()					
+					print("Current Seq Num: " + str(currFrameNbr))
 
 					if currFrameNbr > self.frameNbr: # Discard the late packet
 						self.frameNbr = currFrameNbr
-						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
+						payload = rtpPacket.getPayload()
+						self.updateMovie(self.writeFrame(payload))
+						self.totalFrames += 1
+
+					if self.expFrameNbr != currFrameNbr: #Compare ecpected frame number and gotten frame number
+						self.statPacketsLost += 1
+					
+					# Calculate total data received 
+					payload_length = len(payload)
+					self.statTotalBytes += payload_length
+					
+					# Calculate total play time of the session
+					curTime = time.time()
+					self.statTotalPlayTime += curTime - self.startTime
+					self.operationTime = curTime - self.startTime
+					self.startTime = curTime
+
+					# Display the statistics about the session
+					self.displays[0]["text"] = 'Current frame: ' + str(currFrameNbr)
+					self.displays[1]["text"] = 'Frame per second (fps): ' + str(format(1/self.operationTime,".2f")) + '\t\tAverage: ' + str(format(self.totalFrames/self.statTotalPlayTime,".2f"))
+					self.displays[2]["text"] = 'Data received: ' + str(self.statTotalBytes) + ' bytes'
+					self.displays[3]["text"] = 'Data Rate: ' + str(format(payload_length / self.operationTime,".2f")) + ' bytes/s'  + '\t\tAverage: ' + str(format(self.statTotalBytes / self.statTotalPlayTime,".2f")) + ' bytes/s'
+					self.displays[4]["text"] = 'Packets Lost: ' + str(self.statPacketsLost) + ' packets'
+					self.displays[5]["text"] = 'Packets Lost Rate: ' + str(float(self.statPacketsLost / currFrameNbr))
 
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
