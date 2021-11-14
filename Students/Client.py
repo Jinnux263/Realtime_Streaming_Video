@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
 import socket, threading, sys, traceback, os
+import time
 
 from RtpPacket import RtpPacket
 
@@ -79,6 +80,12 @@ class Client:
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
+
+		self.displays = []
+		for i in range(2):
+			DLabel = Label(self.master, height=1)
+			DLabel.grid(row=2 + i, column=0, columnspan=4, sticky=W, padx=5, pady=5) 
+			self.displays.append(DLabel)
 	
 	def setSpeedDown(self):
 		if self.speed > 0.25:
@@ -115,7 +122,7 @@ class Client:
 		"""Play button handler."""
 		if self.state == self.READY:
 			# Tao ot thread moi de nhan packet
-
+			self.startTime = time.time()
 			threading.Thread(target=self.listenRtp).start()
 			self.playEvent = threading.Event()
 			self.playEvent.clear()
@@ -138,6 +145,7 @@ class Client:
 						self.frameNbr = currFrameNbr
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 
+					
 					
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
