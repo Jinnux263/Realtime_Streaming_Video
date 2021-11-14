@@ -60,6 +60,7 @@ class ServerWorker:
 				try:
 					self.clientInfo['videoStream'] = VideoStream(filename)
 					self.totalFrame = self.clientInfo['videoStream'].gettotalFrame()
+					self.sentTime()
 					#print(totalFrame)
 					self.state = self.READY
 				except IOError:
@@ -163,6 +164,7 @@ class ServerWorker:
 		if code == self.OK_200:
 			#print("200 OK")
 			reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session'])
+			
 			connSocket = self.clientInfo['rtspSocket'][0]
 			connSocket.send(reply.encode())
 		
@@ -171,3 +173,9 @@ class ServerWorker:
 			print("404 NOT FOUND")
 		elif code == self.CON_ERR_500:
 			print("500 CONNECTION ERROR")
+
+	def sentTime(self):
+		reply = "TotalFrame " + str(self.totalFrame) + "\n"
+			
+		connSocket = self.clientInfo['rtspSocket'][0]
+		connSocket.send(reply.encode())

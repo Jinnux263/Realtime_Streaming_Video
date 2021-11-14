@@ -126,39 +126,28 @@ class Client:
 		"""Listen for RTP packets."""
 		while True:
 			try:
-				data, addr = self.rtpSocket.recvfrom(16384)
-
-				if data: #Neu thanh cong thi decode du lieu va xu ly
+				data = self.rtpSocket.recv(20480)
+				if data:
 					rtpPacket = RtpPacket()
 					rtpPacket.decode(data)
-					print ("Current Seq Num: #" + str(rtpPacket.seqNum()))
-
-					try:
-						if self.frameNbr + 1 != rtpPacket.seqNum():
-							self.counter += 1
-							print ('!'*60 + "\nPACKET LOSS\n" + '!'*60)
-						currFrameNbr = rtpPacket.seqNum()
-						#version = rtpPacket.version()
-					except:
-						print ("seqNum() error")
-						print ('-'*60)
-						traceback.print_exc(file=sys.stdout)
-						print ('-'*60)
-
+					
+					currFrameNbr = rtpPacket.seqNum()
+					print("Current Seq Num: " + str(currFrameNbr))
+										
 					if currFrameNbr > self.frameNbr: # Discard the late packet
 						self.frameNbr = currFrameNbr
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
-
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
-				if self.playEvent.isSet():
+				if self.playEvent.isSet(): 
 					break
-
+				
+				# Upon receiving ACK for TEARDOWN request,
+				# close the RTP socket
 				if self.teardownAcked == 1:
 					self.rtpSocket.shutdown(socket.SHUT_RDWR)
 					self.rtpSocket.close()
 					break
-		#TODO
 					
 	def writeFrame(self, data):
 		"""Write the received frame to a temp image file. Return the image file."""
@@ -292,6 +281,11 @@ class Client:
 		"""Parse the RTSP reply from the server."""
 
 		lines = data.split('\n')
+		if (lines[0].split(' ')[0] == "TotalFrame"):
+			self.totalFrame = lines[0].split(' ')[1]
+			print(self.totalFrame)
+			return
+
 		seqNum = int(lines[1].split(' ')[1])
 
 		# Process only if the server reply's sequence number is the same as the request's
