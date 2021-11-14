@@ -111,8 +111,13 @@ class ServerWorker:
 
 		# Process SWITCH request
 		elif requestType == self.SWITCH:
-			print("processing SWITCH\n")			
-			self.sendSwitchOption()
+			print("processing SWITCH\n")
+			if self.state != self.SWITCHING:			
+				self.sendSwitchOption()
+				self.state = self.SWITCHING
+			else:
+				self.changeMovie("movie.Mjpeg")
+				self.state = self.READY
 
 
 			
@@ -174,6 +179,14 @@ class ServerWorker:
 		reply = "Option:\n"
 		reply += "movie.Mjpeg\n"
 		reply += "random.Mjpeg\n"
+		
+		connSocket = self.clientInfo['rtspSocket'][0]
+		connSocket.send(reply.encode())
 
+	def changeMovie(self, filename):
+		self.clientInfo['videoStream'] = VideoStream(filename)
+		self.state = self.READY
+
+		reply = "Change cuccess!\n"		
 		connSocket = self.clientInfo['rtspSocket'][0]
 		connSocket.send(reply.encode())

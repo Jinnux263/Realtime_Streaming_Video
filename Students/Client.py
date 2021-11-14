@@ -36,6 +36,7 @@ class Client:
 		self.teardownAcked = 0
 		self.connectToServer()
 		self.frameNbr = 0
+		self.switchOption = 0
 		
 	# THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI 	
 	def createWidgets(self):
@@ -69,15 +70,35 @@ class Client:
 		self.switch["text"] = "Switch"
 		self.switch["command"] =  self.switchMovie
 		self.switch.grid(row=1, column=4, padx=2, pady=2)
+
+		# Create Change button
+		self.change = Button(self.master, width=20, padx=3, pady=3)
+		self.change["text"] = "change"
+		self.change["command"] =  self.changeMovie
+		self.change.grid(row=1, column=5, padx=2, pady=2)
+
+		self.input = Entry(self.master)
+		self.input.grid(row=0, column=5, padx=2, pady=2)
 		
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
 
 	def switchMovie(self):
-		#self.sendRtspRequest(self.PAUSE)
-		self.sendRtspRequest(self.SWITCH)
-		#print("switch")
+		if self.state == self.SWITCHING:
+			self.switchOption = self.input.get()
+			print(self.switchOption)
+			self.input.delete(0, 50)
+			if self.switchOption:
+				self.sendRtspRequest(self.SWITCH)
+		else:		
+			self.sendRtspRequest(self.SWITCH)
+
+	def changeMovie(self):
+		self.switchOption = self.input.get()
+		self.input.delete(0, 50)
+		print(self.switchOption)
+		
 
 	
 	def setupMovie(self):
@@ -104,7 +125,7 @@ class Client:
 	def playMovie(self):
 		"""Play button handler."""
 		if self.state == self.READY:
-			# Tao ot thread moi de nhan packet
+			# Tao mot thread moi de nhan packet
 
 			threading.Thread(target=self.listenRtp).start()
 			self.playEvent = threading.Event()
@@ -125,7 +146,6 @@ class Client:
 
 					try:
 						if self.frameNbr + 1 != rtpPacket.seqNum():
-							self.counter += 1
 							print ('!'*60 + "\nPACKET LOSS\n" + '!'*60)
 						currFrameNbr = rtpPacket.seqNum()
 						#version = rtpPacket.version()
@@ -244,22 +264,15 @@ class Client:
 
 		# Teardown request
 		elif requestCode == self.TEARDOWN and not self.state == self.INIT:
-			# Update RTSP sequence number.
-			# ...
 			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
 			request = 'TEARDOWN ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
 			self.rtspSocket.send(request.encode())
-
-			# Keep track of the sent request.
-			# self.requestSent = ...
 			self.requestSent = self.TEARDOWN
 
 		# Switch request
 		elif requestCode == self.SWITCH:
 			self.rtspSeq = self.rtspSeq + 1
-			request = 'SWITCH ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId)
+			request = 'SWITCH ' + self.fileName + ' RTSP/1.0\nCSeq: ' + str(self.rtspSeq) + '\nSession: ' + str(self.sessionId) + "\n" + str(self.switchOption)
 			self.rtspSocket.send(request.encode())
 			self.requestSent = self.SWITCH
 
@@ -290,6 +303,11 @@ class Client:
 		lines = data.split('\n')
 		if self.requestSent == self.SWITCH:
 			print(data)
+			if self.state != self.SWITCHING:
+				self.state = self.SWITCHING
+			else:
+				self.state = self.READY
+				self.playEvent.set()
 			return
 
 
@@ -323,6 +341,8 @@ class Client:
 						self.state = self.INIT
 						# Flag the teardownAcked to close the socket.
 						self.teardownAcked = 1
+
+					
 		#TODO
 	
 	def openRtpPort(self):
