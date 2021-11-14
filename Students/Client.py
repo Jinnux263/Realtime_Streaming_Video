@@ -82,7 +82,7 @@ class Client:
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5) 
 
 		self.displays = []
-		for i in range(2):
+		for i in range(3):
 			DLabel = Label(self.master, height=1)
 			DLabel.grid(row=2 + i, column=0, columnspan=4, sticky=W, padx=5, pady=5) 
 			self.displays.append(DLabel)
@@ -145,7 +145,9 @@ class Client:
 						self.frameNbr = currFrameNbr
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 
-					
+					self.displays[0]["text"] = 'Video time: ' + str("{:.2f}".format(int(self.totalFrame) * 0.05))
+					self.displays[1]["text"] = 'Played time: ' + str("{:.2f}".format(int(self.frameNbr) * 0.05))
+					self.displays[2]["text"] = 'Time left: ' + str("{:.2f}".format((int(self.totalFrame) - int(self.frameNbr)) * 0.05))
 					
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
@@ -293,7 +295,7 @@ class Client:
 		lines = data.split('\n')
 		if (lines[0].split(' ')[0] == "TotalFrame"):
 			self.totalFrame = lines[0].split(' ')[1]
-			print(self.totalFrame)
+			#print(self.totalFrame)
 			return
 
 		seqNum = int(lines[1].split(' ')[1])
