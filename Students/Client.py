@@ -234,8 +234,6 @@ class Client:
 		else:
 			return
 		print("Data sent:\n" + request)
-		
-	
 	
 	def recvRtspReply(self):
 		"""Receive RTSP reply from the server."""

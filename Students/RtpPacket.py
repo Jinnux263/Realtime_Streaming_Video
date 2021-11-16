@@ -16,7 +16,7 @@ class RtpPacket:
 		header[0] = (header[0] | version << 6) & 0xC0 # 2 bits, chi hai bit dau duoc kich hoat, co the bo cai header[0] vi moi la lan dau, khong can quan tam may bit con lai
 		header[0] = (header[0] | padding << 5) # 1 bit, lay them mot bit padding, khong xai nhu tren duoc vi se lam hong 2 bit dau
 		header[0] = (header[0] | extension << 4) # 1 bit, tuong tu
-		header[0] = (header[0] | (cc & 0x0F)) # 4 bits, loai bo 4 bit sau cua cc khoi no lam sai lech du lieu cua may bit tren roi moi dua no vao
+		header[0] = (header[0] | (cc & 0x0F)) # 4 bits, loai bo 4 bit dau cua cc khoi no lam sai lech du lieu cua may bit tren roi moi dua no vao
 		header[1] = (header[1] | marker << 7) # 1 bit
 		header[1] = (header[1] | (pt & 0x7f)) # 7 bits
 		header[2] = (seqnum & 0xFF00) >> 8 # 16 bits total, this is first 8
@@ -31,8 +31,6 @@ class RtpPacket:
 		header[11] = ssrc & 0xFF
 
 		self.header = header
-		# Get the payload
-		# ...
 		self.payload = payload
 		
 	def decode(self, byteStream):
